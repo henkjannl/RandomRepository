@@ -1,36 +1,40 @@
+# This script retrieves file information from disk
+# and copies it to the clipboard in an Excel-friendly (tab delimeted) format
 # Configure search job by defining some constants
 # this is done by commenting out (ctrl-/) or adding lines
 
 # Directory
 # DIR = False # Means to search the directory in which the script resides
-DIR = 'C:/Users/hjvanderpol/OneDrive - ASMPT Limited/Papers/_Papers'
+# DIR = 'C:/Users/hjvanderpol/OneDrive - ASMPT Limited/Papers/_Papers'
 # DIR = 'C:/Users/hjvanderpol/OneDrive - ASMPT Limited'
+DIR = 'C:/Users/hjvanderpol/Downloads'
 
-# Filetypes
-# TYPE = '*.xlsx'
-# TYPE = '*.png'
-TYPE = '*.pdf'
-
-# Search subdirectories
+# Recursive search (subdirectories) or not
 # RECURSIVE = False
 RECURSIVE = True 
 
-# Which file data to export
-# EXPORT = ['PATH', 'FILE', 'EXT', 'DATE', 'PDF_DATE', 'EXIFDATE', 'WIDTH', 'HEIGHT']
-EXPORT = ['FullPath', 'Path', 'File', 'Ext', 'Date', 'Pdf_date']
-# EXPORT = ['PATH', 'FILE', 'DATE', 'PDF_DATE']
-# EXPORT = ['FILE', 'PDF_DATE']
+# Filetypes
+TYPE = '*.*'
+# TYPE = '*.xlsx'
+# TYPE = '*.png'
+# TYPE = '*.jpg'
 
+# Which file data to export. The top line has all available fields. Case insensitive.
+# EXPORT = ['FULLPATH', 'PATH', 'FILE', 'EXT', 'MODIFIED', 'ACCESSED', 'CREATED', 'SIZE', 'PDF_DATE', 'EXIFDATE', 'WIDTH', 'HEIGHT']
+# EXPORT = ['PATH', 'FILE', 'SIZE']
+EXPORT = ['PATH', 'FILE', 'SIZE', 'MODIFIED', 'ACCESSED', 'CREATED']
+# EXPORT = ['PATH', 'FILE', 'SIZE', 'EXIFDATE', 'WIDTH', 'HEIGHT']
 
 # Which format to be used for date and time
 # DATE_FMT = "%Y-%m-%d %H:%M:%S"
 DATE_FMT = "%Y-%m-%d"
 
 # How to sort the results
-# SORT = 'PATH'
+SORT = False
+# SORT = 'FULLPATH'
 # SORT = 'FILE'
-# SORT = 'DATE'
-SORT = 'PDF_DATE'
+# SORT = 'CREATED'
+# SORT = 'PDF_DATE'
 # SORT = 'EXIFDATE'
 # SORT = 'WIDTH'
 # SORT = 'HEIGHT'
@@ -39,9 +43,14 @@ SORT_REVERSE = False
 #SORT_REVERSE = True
 
 # ========================================================================
+# Version history
+# V1.0: First working version
+# V1.1: Image information (exif, width, height) added
+# V1.2: PDF date added
+# V2.0: All constants to the top, all code below
+#
 # To do:
-# include extension
-# include full path (path+filename)
+#
 # ========================================================================
 
 # ========================================================================
@@ -53,22 +62,26 @@ def has_field(field):
 
 import os
 import glob
+# pip install pyperclip
 import pyperclip
 from datetime import datetime, timedelta, timezone
 
 # Optional libraries
 try:
-    from PyPDF2 import PdfReader
+    # pip install pypdf2
+    from PyPDF2 import PdfReader 
 except:
     pass
 
 try:
-    from PIL import Image
+    # pip install pillow
+    from PIL import Image 
 except:
     pass
 
 try:
-    import exifread
+    # pip install exifread
+    import exifread   
 except:
     pass
 
@@ -78,10 +91,6 @@ format_date = lambda date: date.strftime(DATE_FMT)
 # Various functions to produce output on per-file basis
 # most exception handling is done when filling in the fields
 # so only do what is needed to optimize output
-get_file_extension = lambda file: os.path.splitext(file)[1]
-get_file_path = lambda file: os.path.dirname(file)
-get_file_name = lambda file: os.path.basename(file)
-get_file_last_modified_date = lambda file: datetime.fromtimestamp(os.path.getmtime(file))
 
 
 def parse_pdf_date(pdf_date):
@@ -123,11 +132,13 @@ def getExifDate(file):
         # First try exifread, for raw files
         with open(file, 'rb') as image_file:
             tags = exifread.process_file(image_file)
-        return tags['Image DateTime'].values
+            result = datetime.strptime(tags['Image DateTime'].values, "%Y:%m:%d %H:%M:%S")
+        return format_date(result)
     except:
         try:
             # Then try PIL
-            return Image.open(file)._getexif()[36867]
+            result = datetime.strptime(Image.open(file)._getexif()[36867], "%Y:%m:%d %H:%M:%S")
+            return format_date(result)
         except:
             # If that does not work, return an error
             return 'N/A'
@@ -178,14 +189,17 @@ def getImageHeight(path):
 
 FIELDS = {
     'FULLPATH': lambda file: file,
-    'PATH':     lambda file: get_file_path(file),
-    'FILE':     lambda file: get_file_name(file),
-    'EXT':      lambda file: get_file_extension(file),
-    'DATE':     lambda file: format_date(get_file_last_modified_date(file)),
+    'PATH':     lambda file: os.path.dirname(file),
+    'FILE':     lambda file: os.path.basename(file),
+    'EXT':      lambda file: os.path.splitext(file)[1],
+	'SIZE':		lambda file: f'{os.path.getsize(file)}',
+    'MODIFIED': lambda file: format_date(datetime.fromtimestamp(os.path.getmtime(file))),
+    'ACCESSED': lambda file: format_date(datetime.fromtimestamp(os.path.getatime(file))),
+    'CREATED':  lambda file: format_date(datetime.fromtimestamp(os.path.getctime(file))),
     'PDF_DATE': lambda file: format_date(get_pdf_creation_date(file)),
-    'EXIFDATE': lambda file: getExifDate(file),
-    'WIDTH':    lambda file: getImageWidth(file),
-    'HEIGHT':   lambda file: getImageHeight(file)
+    'EXIFDATE': lambda file: getExifDate(file),   # Date taken of image
+    'WIDTH':    lambda file: getImageWidth(file), # Width of image
+    'HEIGHT':   lambda file: getImageHeight(file) # Height of image
 }
 
 # Actual code starts here
@@ -196,12 +210,12 @@ if not DIR:
 
 # Read files from disk
 files = glob.glob(os.path.join(DIR, '**', TYPE), recursive=RECURSIVE)
+print(f'{len(files)} files found.', end=' ')
 
 # Straighten forward slashes and backslashes
 files = [os.path.normpath(file) for file in files]
 
 fields_upper = [field.upper() for field in EXPORT]
-SORT = SORT.upper()
 
 # Gather requested fields for each file
 export = []
@@ -214,16 +228,19 @@ for file in files:
             rec[field] = 'N/A'
 
     # Also include the sort field so we can sort the files    
-    if not has_field(SORT):
-        try:
-            rec[SORT] = FIELDS[SORT](file)
-        except:
-            rec[SORT] = 'N/A'
+    if SORT:
+        SORT = SORT.upper()
+        if not has_field(SORT):
+            try:
+                rec[SORT] = FIELDS[SORT](file)
+            except:
+                rec[SORT] = 'N/A'
 
     export.append(rec)
 
 # Sort the files
-export = sorted(export, key=lambda x: x[SORT], reverse=SORT_REVERSE)
+if SORT:
+    export = sorted(export, key=lambda field: field[SORT], reverse=SORT_REVERSE)
 
 # Convert the dictionaries in tab separated lines
 export = ['\t'.join([rec[field] for field in fields_upper]) for rec in export]
@@ -232,4 +249,4 @@ export = ['\t'.join([rec[field] for field in fields_upper]) for rec in export]
 export.insert(0, '\t'.join(EXPORT))
 
 pyperclip.copy('\n'.join(export))
-print(f'Data from {len(export)} files copied to the clipboard')
+print(f'Data copied to the clipboard')
