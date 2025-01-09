@@ -13,17 +13,22 @@ DIR = 'C:/Users/hjvanderpol/Downloads'
 # RECURSIVE = False
 RECURSIVE = True 
 
+# Include hidden files
+# INCLUDE_HIDDEN = False
+INCLUDE_HIDDEN = True
+
 # Filetypes
-TYPE = '*.*'
-# TYPE = '*.xlsx'
-# TYPE = '*.png'
-# TYPE = '*.jpg'
+# TYPES = ['*.*']
+# TYPES = ['*.xlsx']
+# TYPES = ['*.pdf']
+TYPES = ['*.png', '*.tiff', '*.tif', '*.jpg', '*.jpeg', '*.cr2', '*.arw']
+# TYPES = ['*.jpg']
 
 # Which file data to export. The top line has all available fields. Case insensitive.
 # EXPORT = ['FULLPATH', 'PATH', 'FILE', 'EXT', 'MODIFIED', 'ACCESSED', 'CREATED', 'SIZE', 'PDF_DATE', 'EXIFDATE', 'WIDTH', 'HEIGHT']
 # EXPORT = ['PATH', 'FILE', 'SIZE']
-EXPORT = ['PATH', 'FILE', 'SIZE', 'MODIFIED', 'ACCESSED', 'CREATED']
-# EXPORT = ['PATH', 'FILE', 'SIZE', 'EXIFDATE', 'WIDTH', 'HEIGHT']
+# EXPORT = ['PATH', 'FILE', 'SIZE', 'MODIFIED', 'ACCESSED', 'CREATED']
+EXPORT = ['Path', 'File', 'Size', 'Created', 'ExifDate', 'Width', 'Height']
 
 # Which format to be used for date and time
 # DATE_FMT = "%Y-%m-%d %H:%M:%S"
@@ -43,23 +48,20 @@ SORT_REVERSE = False
 #SORT_REVERSE = True
 
 # ========================================================================
+# Code below typically does not need to be changed 
+# From here, data is retrieved from disk and copied to the clipboard
+#
 # Version history
 # V1.0: First working version
 # V1.1: Image information (exif, width, height) added
 # V1.2: PDF date added
 # V2.0: All constants to the top, all code below
+# V2.1: Support for hidden files added
+#       Support for multiple file types added
 #
 # To do:
-#
+#    perhaps write as single function call to be used by overarching scripts
 # ========================================================================
-
-# ========================================================================
-# Code below does not need to be changed 
-# From here, data is retrieved from disk and copied to the clipboard
-# ========================================================================
-def has_field(field):
-    return field.upper() in [elem.upper() for elem in EXPORT]
-
 import os
 import glob
 # pip install pyperclip
@@ -88,11 +90,11 @@ except:
 # Convert datetime record to string
 format_date = lambda date: date.strftime(DATE_FMT)
 
+# ========================================================================
 # Various functions to produce output on per-file basis
 # most exception handling is done when filling in the fields
 # so only do what is needed to optimize output
-
-
+# ========================================================================
 def parse_pdf_date(pdf_date):
     date_str = pdf_date[2:]    # Remove the "D:" prefix
     dt_part = date_str[:14]    # Extract the main date and time part
@@ -162,8 +164,7 @@ def getImageWidth(path):
             return str(Image.open(path).size[0])
         except:
             # If that does not work, return an error
-            return 'Error'
-
+            return 'N/A'
 
 # Get height of photo from Exif
 def getImageHeight(path):
@@ -202,51 +203,50 @@ FIELDS = {
     'HEIGHT':   lambda file: getImageHeight(file) # Height of image
 }
 
-# Actual code starts here
+def get_field(file, field):
+    try:
+        return FIELDS[field.upper()](file)
+    except:
+        return "N/A"
+
+# ========================================================================
+# Main starts here
+# ========================================================================
 
 # If DIR is false, replace it by the directory in which this script resides
 if not DIR:
     DIR = os.path.dirname(os.path.abspath(__file__)) 
 
 # Read files from disk
-files = glob.glob(os.path.join(DIR, '**', TYPE), recursive=RECURSIVE)
+files = []
+for type in TYPES:
+    files.extend( glob.glob(os.path.join(DIR, '**', type), recursive=RECURSIVE, include_hidden=INCLUDE_HIDDEN) )
 print(f'{len(files)} files found.', end=' ')
 
 # Straighten forward slashes and backslashes
 files = [os.path.normpath(file) for file in files]
 
+# Create list of uppercase fields without modifying EXPORT
 fields_upper = [field.upper() for field in EXPORT]
 
-# Gather requested fields for each file
-export = []
-for file in files:
-    rec = {}
-    for field in fields_upper:
-        try:
-            rec[field] = FIELDS[field](file)
-        except:
-            rec[field] = 'N/A'
+# Add sort field to the list if needed
+if SORT:
+    SORT = SORT.upper()
+    if SORT not in fields_upper:
+        fields_upper.append(SORT)
 
-    # Also include the sort field so we can sort the files    
-    if SORT:
-        SORT = SORT.upper()
-        if not has_field(SORT):
-            try:
-                rec[SORT] = FIELDS[SORT](file)
-            except:
-                rec[SORT] = 'N/A'
-
-    export.append(rec)
+# Gather a dictionary of requested fields for each file
+export_files = [{field: get_field(file, field) for field in fields_upper} for file in files]
 
 # Sort the files
 if SORT:
-    export = sorted(export, key=lambda field: field[SORT], reverse=SORT_REVERSE)
+    export_files = sorted(export_files, key=lambda field: field[SORT], reverse=SORT_REVERSE)
 
 # Convert the dictionaries in tab separated lines
-export = ['\t'.join([rec[field] for field in fields_upper]) for rec in export]
+export_files = ['\t'.join([file[field.upper()] for field in EXPORT]) for file in export_files]
 
-# Add a header to the beginner. Use the non-uppercase version here
-export.insert(0, '\t'.join(EXPORT))
+# Insert header at the beginning
+export_files.insert(0, '\t'.join(EXPORT))
 
-pyperclip.copy('\n'.join(export))
+pyperclip.copy('\n'.join(export_files))
 print(f'Data copied to the clipboard')
