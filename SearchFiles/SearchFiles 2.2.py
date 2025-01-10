@@ -10,7 +10,7 @@ DIR = r'C:\Users\henkj\OneDrive\01 Gezamenlijk\03 Huis\03 Zonstraat - Hengelo\_S
 # DIR = 'C:/Users/hjvanderpol/OneDrive - ASMPT Limited'
 # DIR = 'C:/Users/hjvanderpol/Downloads'
 
-# Recursive search (subdirectories) or not
+# Search subdirectories or not
 # RECURSIVE = False
 RECURSIVE = True
 
@@ -26,22 +26,23 @@ TYPES = ['*.png', '*.tiff', '*.tif', '*.jpg', '*.jpeg', '*.cr2', '*.arw']
 # TYPES = ['*.jpg']
 
 # Which file data to export. The top line has all available fields. Case insensitive.
-# EXPORT = ['FULLPATH', 'PATH', 'FILE', 'EXT', 'MODIFIED', 'ACCESSED', 'CREATED', 'SIZE', 'PDF_DATE', 'EXIFDATE', 'WIDTH', 'HEIGHT']
+# EXPORT = ['FULLPATH', 'PATH', 'FILE', 'EXT', 'HYPERLINK', 'MODIFIED', 'ACCESSED', 'CREATED', 'SIZE', 'PDF_DATE', 'EXIFDATE', 'WIDTH', 'HEIGHT']
 # EXPORT = ['PATH', 'FILE', 'SIZE']
 # EXPORT = ['PATH', 'FILE', 'SIZE', 'MODIFIED', 'ACCESSED', 'CREATED']
-EXPORT = ['Path', 'File', 'Size', 'Created', 'ExifDate', 'Width', 'Height']
+# EXPORT = ['Path', 'File', 'Size', 'Created', 'ExifDate', 'Width', 'Height']
+EXPORT = ['Hyperlink', 'Path', 'File', 'Created', 'ExifDate', 'Width', 'Height']
 
 # Which format to be used for date and time
 # DATE_FMT = "%Y-%m-%d %H:%M:%S"
 DATE_FMT = "%Y-%m-%d"
 
 # How to sort the results
-SORT = False
+# SORT = False
 # SORT = 'FULLPATH'
 # SORT = 'FILE'
 # SORT = 'CREATED'
 # SORT = 'PDF_DATE'
-# SORT = 'EXIFDATE'
+SORT = 'EXIFDATE'
 # SORT = 'WIDTH'
 # SORT = 'HEIGHT'
 
@@ -59,6 +60,7 @@ SORT_REVERSE = False
 # V2.0: All constants to the top, all code below
 # V2.1: Support for hidden files added
 #       Support for multiple file types added
+# V2.2: Excel =HYPERLINK() added
 #
 # To do:
 #    perhaps write as single function call to be used by overarching scripts
@@ -190,18 +192,19 @@ def getImageHeight(path):
             return 'N/A'
 
 FIELDS = {
-    'FULLPATH': lambda file: file,
-    'PATH':     lambda file: os.path.dirname(file),
-    'FILE':     lambda file: os.path.basename(file),
-    'EXT':      lambda file: os.path.splitext(file)[1],
-	'SIZE':		lambda file: f'{os.path.getsize(file)}',
-    'MODIFIED': lambda file: format_date(datetime.fromtimestamp(os.path.getmtime(file))),
-    'ACCESSED': lambda file: format_date(datetime.fromtimestamp(os.path.getatime(file))),
-    'CREATED':  lambda file: format_date(datetime.fromtimestamp(os.path.getctime(file))),
-    'PDF_DATE': lambda file: format_date(get_pdf_creation_date(file)),
-    'EXIFDATE': lambda file: getExifDate(file),   # Date taken of image
-    'WIDTH':    lambda file: getImageWidth(file), # Width of image
-    'HEIGHT':   lambda file: getImageHeight(file) # Height of image
+    'FULLPATH':  lambda file: file,
+    'HYPERLINK': lambda file: f'=HYPERLINK("{file}")',
+    'PATH':      lambda file: os.path.dirname(file),
+    'FILE':      lambda file: os.path.basename(file),
+    'EXT':       lambda file: os.path.splitext(file)[1],
+	'SIZE':		 lambda file: f'{os.path.getsize(file)}',
+    'MODIFIED':  lambda file: format_date(datetime.fromtimestamp(os.path.getmtime(file))),
+    'ACCESSED':  lambda file: format_date(datetime.fromtimestamp(os.path.getatime(file))),
+    'CREATED':   lambda file: format_date(datetime.fromtimestamp(os.path.getctime(file))),
+    'PDF_DATE':  lambda file: format_date(get_pdf_creation_date(file)),
+    'EXIFDATE':  lambda file: getExifDate(file),   # Date taken of image
+    'WIDTH':     lambda file: getImageWidth(file), # Width of image
+    'HEIGHT':    lambda file: getImageHeight(file) # Height of image
 }
 
 def get_field(file, field):
@@ -222,7 +225,7 @@ if not DIR:
 files = []
 for type in TYPES:
     files.extend( glob.glob(os.path.join(DIR, '**', type), recursive=RECURSIVE, include_hidden=INCLUDE_HIDDEN) )
-print(f'{len(files)} files found.', end=' ')
+print(f'{len(files)} files found. Preparing export...', end=' ')
 
 # Straighten forward slashes and backslashes
 files = [os.path.normpath(file) for file in files]

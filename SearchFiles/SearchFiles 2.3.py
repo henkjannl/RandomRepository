@@ -3,6 +3,7 @@
 # Configure search job by defining some constants
 # this is done by commenting out (ctrl-/) or adding lines
 
+
 # Directory
 # DIR = False # Means to search the directory in which the script resides
 DIR = r'C:\Users\henkj\OneDrive\01 Gezamenlijk\03 Huis\03 Zonstraat - Hengelo\_Serre en keuken'
@@ -10,7 +11,7 @@ DIR = r'C:\Users\henkj\OneDrive\01 Gezamenlijk\03 Huis\03 Zonstraat - Hengelo\_S
 # DIR = 'C:/Users/hjvanderpol/OneDrive - ASMPT Limited'
 # DIR = 'C:/Users/hjvanderpol/Downloads'
 
-# Recursive search (subdirectories) or not
+# Search subdirectories or not
 # RECURSIVE = False
 RECURSIVE = True
 
@@ -26,22 +27,23 @@ TYPES = ['*.png', '*.tiff', '*.tif', '*.jpg', '*.jpeg', '*.cr2', '*.arw']
 # TYPES = ['*.jpg']
 
 # Which file data to export. The top line has all available fields. Case insensitive.
-# EXPORT = ['FULLPATH', 'PATH', 'FILE', 'EXT', 'MODIFIED', 'ACCESSED', 'CREATED', 'SIZE', 'PDF_DATE', 'EXIFDATE', 'WIDTH', 'HEIGHT']
+# EXPORT = ['FULLPATH', 'PATH', 'FILE', 'EXT', 'HYPERLINK', 'MODIFIED', 'ACCESSED', 'CREATED', 'SIZE', 'PDF_DATE', 'EXIFDATE', 'WIDTH', 'HEIGHT']
 # EXPORT = ['PATH', 'FILE', 'SIZE']
 # EXPORT = ['PATH', 'FILE', 'SIZE', 'MODIFIED', 'ACCESSED', 'CREATED']
-EXPORT = ['Path', 'File', 'Size', 'Created', 'ExifDate', 'Width', 'Height']
+# EXPORT = ['Path', 'File', 'Size', 'Created', 'ExifDate', 'Width', 'Height']
+EXPORT = ['Hyperlink', 'Path', 'File', 'Created', 'ExifDate', 'Width', 'Height']
 
 # Which format to be used for date and time
 # DATE_FMT = "%Y-%m-%d %H:%M:%S"
 DATE_FMT = "%Y-%m-%d"
 
 # How to sort the results
-SORT = False
+# SORT = False
 # SORT = 'FULLPATH'
 # SORT = 'FILE'
 # SORT = 'CREATED'
 # SORT = 'PDF_DATE'
-# SORT = 'EXIFDATE'
+SORT = 'EXIFDATE'
 # SORT = 'WIDTH'
 # SORT = 'HEIGHT'
 
@@ -59,10 +61,13 @@ SORT_REVERSE = False
 # V2.0: All constants to the top, all code below
 # V2.1: Support for hidden files added
 #       Support for multiple file types added
+# V2.2: Export to Excel =HYPERLINK() added
 #
 # To do:
 #    perhaps write as single function call to be used by overarching scripts
 # ========================================================================
+
+# Import libraries. Optional libraries are imported with 'try'
 import os
 import glob
 # pip install pyperclip
@@ -88,14 +93,14 @@ try:
 except:
     pass
 
-# Convert datetime record to string
-format_date = lambda date: date.strftime(DATE_FMT)
-
 # ========================================================================
 # Various functions to produce output on per-file basis
 # most exception handling is done when filling in the fields
 # so only do what is needed to optimize output
 # ========================================================================
+# Convert datetime record to string
+format_date = lambda date, date_fmt: date.strftime(date_fmt)
+
 def parse_pdf_date(pdf_date):
     date_str = pdf_date[2:]    # Remove the "D:" prefix
     dt_part = date_str[:14]    # Extract the main date and time part
@@ -189,65 +194,83 @@ def getImageHeight(path):
             # If that does not work, return an error
             return 'N/A'
 
-FIELDS = {
-    'FULLPATH': lambda file: file,
-    'PATH':     lambda file: os.path.dirname(file),
-    'FILE':     lambda file: os.path.basename(file),
-    'EXT':      lambda file: os.path.splitext(file)[1],
-	'SIZE':		lambda file: f'{os.path.getsize(file)}',
-    'MODIFIED': lambda file: format_date(datetime.fromtimestamp(os.path.getmtime(file))),
-    'ACCESSED': lambda file: format_date(datetime.fromtimestamp(os.path.getatime(file))),
-    'CREATED':  lambda file: format_date(datetime.fromtimestamp(os.path.getctime(file))),
-    'PDF_DATE': lambda file: format_date(get_pdf_creation_date(file)),
-    'EXIFDATE': lambda file: getExifDate(file),   # Date taken of image
-    'WIDTH':    lambda file: getImageWidth(file), # Width of image
-    'HEIGHT':   lambda file: getImageHeight(file) # Height of image
+# Constant dictionary enumerating all possible fields that can be used
+FIELD_FUNCTIONS = {
+    'FULLPATH':  lambda file, date_fmt: file,
+    'HYPERLINK': lambda file, date_fmt: f'=HYPERLINK("{file}")',
+    'PATH':      lambda file, date_fmt: os.path.dirname(file),
+    'FILE':      lambda file, date_fmt: os.path.basename(file),
+    'EXT':       lambda file, date_fmt: os.path.splitext(file)[1],
+    'SIZE':		 lambda file, date_fmt: f'{os.path.getsize(file)}',
+    'MODIFIED':  lambda file, date_fmt: datetime.fromtimestamp(os.path.getmtime(file)).strftime(date_fmt),
+    'ACCESSED':  lambda file, date_fmt: datetime.fromtimestamp(os.path.getatime(file)).strftime(date_fmt),
+    'CREATED':   lambda file, date_fmt: datetime.fromtimestamp(os.path.getctime(file)).strftime(date_fmt),
+    'PDF_DATE':  lambda file, date_fmt: datetime.get_pdf_creation_date(file).strftime(date_fmt),
+    'EXIFDATE':  lambda file, date_fmt: getExifDate(file).strftime(date_fmt),   # Date taken of image
+    'WIDTH':     lambda file, date_fmt: getImageWidth(file), # Width of image
+    'HEIGHT':    lambda file, date_fmt: getImageHeight(file) # Height of image
 }
 
-def get_field(file, field):
+def get_field(file, field, date_fmt):
     try:
-        return FIELDS[field.upper()](file)
+        return FIELD_FUNCTIONS[field.upper()](file, date_fmt)
     except:
         return "N/A"
 
-# ========================================================================
-# Main starts here
-# ========================================================================
+def search_files( dir = False,
+                  recursive = True,
+                  hidden =  True,
+                  types = ['*.*'],
+                  export = ['File', 'Created'],
+                  date_fmt = "%Y-%m-%d",
+                  sort = False,
+                  sort_reverse = False ):
 
-# If DIR is false, replace it by the directory in which this script resides
-if not DIR:
-    DIR = os.path.dirname(os.path.abspath(__file__))
+    # If DIR is false, replace it by the directory in which this script resides
+    if not dir:
+        dir = os.path.dirname(os.path.abspath(__file__))
 
-# Read files from disk
-files = []
-for type in TYPES:
-    files.extend( glob.glob(os.path.join(DIR, '**', type), recursive=RECURSIVE, include_hidden=INCLUDE_HIDDEN) )
-print(f'{len(files)} files found.', end=' ')
+    # Read files from disk
+    files = []
+    for typ in types:
+        files.extend( glob.glob(os.path.join(dir, '**', typ), recursive=recursive, include_hidden=hidden) )
+    print(f'{len(files)} files found. Preparing export...', end=' ')
 
-# Straighten forward slashes and backslashes
-files = [os.path.normpath(file) for file in files]
+    # Straighten forward slashes and backslashes
+    files = [os.path.normpath(file) for file in files]
 
-# Create list of uppercase fields without modifying EXPORT
-fields_upper = [field.upper() for field in EXPORT]
+    # Create list of uppercase fields without modifying EXPORT
+    fields_upper = [field.upper() for field in export]
 
-# Add sort field to the list if needed
-if SORT:
-    SORT = SORT.upper()
-    if SORT not in fields_upper:
-        fields_upper.append(SORT)
+    # Add sort field to the list if needed
+    if sort:
+        sort = sort.upper()
+        if sort not in fields_upper:
+            fields_upper.append(sort)
 
-# Gather a dictionary of requested fields for each file
-export_files = [{field: get_field(file, field) for field in fields_upper} for file in files]
+    # Gather a dictionary of requested fields for each file
+    export_files = [{field: get_field(file, field, date_fmt) for field in fields_upper} for file in files]
 
-# Sort the files
-if SORT:
-    export_files = sorted(export_files, key=lambda field: field[SORT], reverse=SORT_REVERSE)
+    # Sort the files
+    if sort:
+        export_files = sorted(export_files, key=lambda field: field[sort], reverse=sort_reverse)
 
-# Convert the dictionaries in tab separated lines
-export_files = ['\t'.join([file[field.upper()] for field in EXPORT]) for file in export_files]
+    # Convert the dictionaries in tab separated lines
+    export_files = ['\t'.join([file[field.upper()] for field in export]) for file in export_files]
 
-# Insert header at the beginning
-export_files.insert(0, '\t'.join(EXPORT))
+    # Insert header at the beginning
+    export_files.insert(0, '\t'.join(export))
 
-pyperclip.copy('\n'.join(export_files))
-print(f'Data copied to the clipboard')
+    pyperclip.copy('\n'.join(export_files))
+    print(f'Data copied to the clipboard')
+
+
+if __name__ == '__main__':
+    search_files( dir=DIR,
+                  recursive=RECURSIVE,
+                  hidden = INCLUDE_HIDDEN,
+                  types = TYPES,
+                  export = EXPORT,
+                  date_fmt = DATE_FMT,
+                  sort = SORT,
+                  sort_reverse=SORT_REVERSE)
