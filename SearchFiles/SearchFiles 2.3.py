@@ -7,10 +7,10 @@
 # Directory
 # DIR = False # Means to search the directory in which the script resides
 # DIR = r'C:\Users\henkj\OneDrive\01 Gezamenlijk\03 Huis\03 Zonstraat - Hengelo\_Serre en keuken'
-DIR = r'C:\Users\henkj\OneDrive\01 Gezamenlijk\03 Huis\03 Zonstraat - Hengelo\_Serre en keuken\2025-01-10 Tekeningen Kleinbouw Twente'
-# DIR = 'C:/Users/hjvanderpol/OneDrive - ASMPT Limited/Papers/_Papers'
-# DIR = 'C:/Users/hjvanderpol/OneDrive - ASMPT Limited'
-# DIR = 'C:/Users/hjvanderpol/Downloads'
+# DIR = r'C:\Users\henkj\OneDrive\01 Gezamenlijk\03 Huis\03 Zonstraat - Hengelo\_Serre en keuken\2025-01-10 Tekeningen Kleinbouw Twente'
+DIR = r'C:\Users\hjvanderpol\OneDrive - ASMPT Limited\Documents\Concept'
+# DIR = r'C:/Users/hjvanderpol/OneDrive - ASMPT Limited'
+# DIR = r'C:/Users/hjvanderpol/Downloads'
 
 # Search subdirectories or not
 # RECURSIVE = False
@@ -21,19 +21,19 @@ RECURSIVE = True
 INCLUDE_HIDDEN = True
 
 # Filetypes
-# TYPES = ['*.*']
+TYPES = ['*.*']
 # TYPES = ['*.xlsx']
-TYPES = ['*.pdf']
+# TYPES = ['*.pdf']
 # TYPES = ['*.png', '*.tiff', '*.tif', '*.jpg', '*.jpeg', '*.cr2', '*.arw']
 # TYPES = ['*.jpg']
 
 # Which file data to export. The top line has all available fields. Case insensitive.
 # EXPORT = ['FULLPATH', 'PATH', 'FILE', 'EXT', 'HYPERLINK', 'MODIFIED', 'ACCESSED', 'CREATED', 'SIZE', 'PDF_DATE', 'EXIFDATE', 'WIDTH', 'HEIGHT']
-# EXPORT = ['PATH', 'FILE', 'SIZE']
+EXPORT = ['PATH', 'FILE', 'SIZE']
 # EXPORT = ['PATH', 'FILE', 'SIZE', 'MODIFIED', 'ACCESSED', 'CREATED']
 # EXPORT = ['Path', 'File', 'Size', 'Created', 'ExifDate', 'Width', 'Height']
 # EXPORT = ['Hyperlink', 'Path', 'File', 'Created', 'ExifDate', 'Width', 'Height']
-EXPORT = ['Hyperlink', 'File', 'PDF_DATE']
+# EXPORT = ['Hyperlink', 'File', 'PDF_DATE']
 
 # Which format to be used for date and time
 DATE_FMT = "%Y-%m-%d %H:%M:%S"
@@ -122,7 +122,7 @@ def parse_pdf_date(pdf_date):
         elif offset_sign == '+':
             dt = dt.replace(tzinfo=timezone(offset))
 
-    print(f'[{date_str}][{dt_part}]{dt.strftime('%Y-%m-%d %H:%M:%S')}')
+    # print(f'[{date_str}][{dt_part}]{dt.strftime('%Y-%m-%d %H:%M:%S')}')
 
     return dt
 
