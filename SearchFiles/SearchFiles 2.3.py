@@ -2,11 +2,12 @@
 # copies it to the clipboard in an Excel-friendly (tab delimeted) format
 # Configure search job by defining some constants
 # this is done by commenting out (ctrl-/) or adding lines
-
+# The module defines a function search_files() which can also be called directly
 
 # Directory
 # DIR = False # Means to search the directory in which the script resides
-DIR = r'C:\Users\henkj\OneDrive\01 Gezamenlijk\03 Huis\03 Zonstraat - Hengelo\_Serre en keuken'
+# DIR = r'C:\Users\henkj\OneDrive\01 Gezamenlijk\03 Huis\03 Zonstraat - Hengelo\_Serre en keuken'
+DIR = r'C:\Users\henkj\OneDrive\01 Gezamenlijk\03 Huis\03 Zonstraat - Hengelo\_Serre en keuken\2025-01-10 Tekeningen Kleinbouw Twente'
 # DIR = 'C:/Users/hjvanderpol/OneDrive - ASMPT Limited/Papers/_Papers'
 # DIR = 'C:/Users/hjvanderpol/OneDrive - ASMPT Limited'
 # DIR = 'C:/Users/hjvanderpol/Downloads'
@@ -22,8 +23,8 @@ INCLUDE_HIDDEN = True
 # Filetypes
 # TYPES = ['*.*']
 # TYPES = ['*.xlsx']
-# TYPES = ['*.pdf']
-TYPES = ['*.png', '*.tiff', '*.tif', '*.jpg', '*.jpeg', '*.cr2', '*.arw']
+TYPES = ['*.pdf']
+# TYPES = ['*.png', '*.tiff', '*.tif', '*.jpg', '*.jpeg', '*.cr2', '*.arw']
 # TYPES = ['*.jpg']
 
 # Which file data to export. The top line has all available fields. Case insensitive.
@@ -31,24 +32,25 @@ TYPES = ['*.png', '*.tiff', '*.tif', '*.jpg', '*.jpeg', '*.cr2', '*.arw']
 # EXPORT = ['PATH', 'FILE', 'SIZE']
 # EXPORT = ['PATH', 'FILE', 'SIZE', 'MODIFIED', 'ACCESSED', 'CREATED']
 # EXPORT = ['Path', 'File', 'Size', 'Created', 'ExifDate', 'Width', 'Height']
-EXPORT = ['Hyperlink', 'Path', 'File', 'Created', 'ExifDate', 'Width', 'Height']
+# EXPORT = ['Hyperlink', 'Path', 'File', 'Created', 'ExifDate', 'Width', 'Height']
+EXPORT = ['Hyperlink', 'File', 'PDF_DATE']
 
 # Which format to be used for date and time
-# DATE_FMT = "%Y-%m-%d %H:%M:%S"
-DATE_FMT = "%Y-%m-%d"
+DATE_FMT = "%Y-%m-%d %H:%M:%S"
+# DATE_FMT = "%Y-%m-%d"
 
 # How to sort the results
 # SORT = False
 # SORT = 'FULLPATH'
 # SORT = 'FILE'
 # SORT = 'CREATED'
-# SORT = 'PDF_DATE'
-SORT = 'EXIFDATE'
+SORT = 'PDF_DATE'
+# SORT = 'EXIFDATE'
 # SORT = 'WIDTH'
 # SORT = 'HEIGHT'
 
-SORT_REVERSE = False
-#SORT_REVERSE = True
+# SORT_REVERSE = False
+SORT_REVERSE = True
 
 # ========================================================================
 # Code below typically does not need to be changed
@@ -62,12 +64,13 @@ SORT_REVERSE = False
 # V2.1: Support for hidden files added
 #       Support for multiple file types added
 # V2.2: Export to Excel =HYPERLINK() added
+# V2.3: Rewritten in  single function call to be used by overarching scripts
 #
 # To do:
-#    perhaps write as single function call to be used by overarching scripts
+#
 # ========================================================================
 
-# Import libraries. Optional libraries are imported with 'try'
+# Import libraries. Optional libraries are imported with 'try' in case not all libraries are installed
 import os
 import glob
 # pip install pyperclip
@@ -118,6 +121,8 @@ def parse_pdf_date(pdf_date):
             dt = dt.replace(tzinfo=timezone(-offset))
         elif offset_sign == '+':
             dt = dt.replace(tzinfo=timezone(offset))
+
+    print(f'[{date_str}][{dt_part}]{dt.strftime('%Y-%m-%d %H:%M:%S')}')
 
     return dt
 
@@ -205,7 +210,7 @@ FIELD_FUNCTIONS = {
     'MODIFIED':  lambda file, date_fmt: datetime.fromtimestamp(os.path.getmtime(file)).strftime(date_fmt),
     'ACCESSED':  lambda file, date_fmt: datetime.fromtimestamp(os.path.getatime(file)).strftime(date_fmt),
     'CREATED':   lambda file, date_fmt: datetime.fromtimestamp(os.path.getctime(file)).strftime(date_fmt),
-    'PDF_DATE':  lambda file, date_fmt: datetime.get_pdf_creation_date(file).strftime(date_fmt),
+    'PDF_DATE':  lambda file, date_fmt: get_pdf_creation_date(file).strftime(date_fmt),
     'EXIFDATE':  lambda file, date_fmt: getExifDate(file).strftime(date_fmt),   # Date taken of image
     'WIDTH':     lambda file, date_fmt: getImageWidth(file), # Width of image
     'HEIGHT':    lambda file, date_fmt: getImageHeight(file) # Height of image
@@ -215,7 +220,7 @@ def get_field(file, field, date_fmt):
     try:
         return FIELD_FUNCTIONS[field.upper()](file, date_fmt)
     except:
-        return "N/A"
+        return ""
 
 def search_files( dir = False,
                   recursive = True,
