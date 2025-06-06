@@ -24,8 +24,8 @@ RECURSIVE = True
 INCLUDE_HIDDEN = True
 
 # Filetypes
-# TYPES = ['*.*']
-TYPES = ['*.xlsx']
+TYPES = ['*.*']
+# TYPES = ['*.xlsx']
 # TYPES = ['*.pdf']
 # TYPES = ['*.png', '*.tiff', '*.tif', '*.jpg', '*.jpeg', '*.cr2', '*.arw']
 # TYPES = ['*.jpg']
@@ -34,8 +34,17 @@ TYPES = ['*.xlsx']
 # TYPES = ['*.pptx', '*.pdf']
 
 # FILTER ON FILENAME CONTENT
-FILTER_FILENAME = lambda filename: True
+import re
+# FILTER_FILENAME = lambda filename: True
 # FILTER_FILENAME = lambda filename: "work" in filename.lower()
+
+# \b is a word boundary in regex, so "yield" won't match "dry-yield" or "field" unless it's a separate word.
+# FILTER_FILENAME = lambda f: re.compile(r'\byield\b', re.IGNORECASE).search(f) 
+
+# Filter on files with version numbers up to 3 digits. 
+# \b ensures it's a standalone word, so it won't match something like V1234 (more than 3 digits).
+FILTER_FILENAME = lambda f: re.compile(r'\bV\d{1,3}\b', re.IGNORECASE).search(f) 
+
 
 # Which file data to export. The top line has all available fields. Case insensitive.
 # EXPORT = ['FULLPATH', 'PATH', 'FILE', 'EXT', 'HYPERLINK', 'MODIFIED', 'ACCESSED', 'CREATED', 'SIZE', 'PDF_DATE', 'EXIFDATE', 'WIDTH', 'HEIGHT']
