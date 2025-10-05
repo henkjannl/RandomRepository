@@ -14,7 +14,10 @@
 # DIR = r'C:/Users/hjvanderpol/OneDrive - ASMPT Limited'
 # DIR = r'C:/Users/hjvanderpol'
 # DIR = r'C:/Users/hjvanderpol/Downloads'
-DIR = r'C:\Users\hjvanderpol\ASMPT Limited\Advanced Packaging alsi semi - Documents'
+# DIR = r'C:\Users\henkj\OneDrive'
+DIR = r'C:\Users\henkj\OneDrive\01 Gezamenlijk\03 Huis\03 Zonstraat - Hengelo'
+# DIR = r'C:\Program Files\FreeCAD 1.0'
+# DIR = r'C:\Users\hjvanderpol\ASMPT Limited\Advanced Packaging alsi semi - Documents'
 # DIR = r'C:\Users\hjvanderpol\ASMPT Limited\File Sharing - ALSI - SEMI - Demcon AP'
 # DIR = r'C:\Users\hjvanderpol\OneDrive - ASMPT Limited\System-Engineering-alsi-semi - Documents'
 # DIR = r'C:\Users\hjvanderpol\ASMPT Limited\Centre of Competency - ALSI - SEMI - Documents'
@@ -37,11 +40,12 @@ INCLUDE_HIDDEN = True
 # TYPES = ['*.*']
 # TYPES = ['*.xlsx']
 # TYPES = ['*.pdf']
-# TYPES = ['*.png', '*.tiff', '*.tif', '*.jpg', '*.jpeg', '*.cr2', '*.arw']
+TYPES = ['*.png', '*.tiff', '*.tif', '*.jpg', '*.jpeg', '*.cr2', '*.arw']
 # TYPES = ['*.jpg']
 # TYPES = ['*.svg']
+# TYPES = ['*.svg', '*.png']
 # TYPES = ['*.pptx']
-TYPES = ['*.pptx', '*.pdf']
+# TYPES = ['*.pptx', '*.pdf']
 
 # ========================================================================
 # Filter on the filename
@@ -49,16 +53,16 @@ TYPES = ['*.pptx', '*.pdf']
 import re
 FILTER_FILENAME = lambda filename: True
 # FILTER_FILENAME = lambda filename: "collective" in filename.lower()
-# FILTER_FILENAME = lambda filename: "litho" in filename.lower()
+# FILTER_FILENAME = lambda filename: "numbering" in filename.lower() and "word" in filename.lower()
 # FILTER_FILENAME = lambda filename: "litho" in filename.lower() or "lb" in filename.lower() or "hybrid" in filename.lower()
 # FILTER_FILENAME = lambda filename: "8800" in filename
 
 # \b is a word boundary in regex, so "yield" won't match "dry-yield" or "field" unless it's a separate word.
-# FILTER_FILENAME = lambda f: re.compile(r'\byield\b', re.IGNORECASE).search(f) 
+# FILTER_FILENAME = lambda f: re.compile(r'\byield\b', re.IGNORECASE).search(f)
 
-# Filter on files with version numbers up to 3 digits. 
+# Filter on files with version numbers up to 3 digits.
 # \b ensures it's a standalone word, so it won't match something like V1234 (more than 3 digits).
-# FILTER_FILENAME = lambda f: re.compile(r'\bV\d{1,3}\b', re.IGNORECASE).search(f) 
+# FILTER_FILENAME = lambda f: re.compile(r'\bV\d{1,3}\b', re.IGNORECASE).search(f)
 
 # ======================================================================================
 # Which file data to export. The top line has all available fields. Case insensitive
@@ -66,13 +70,15 @@ FILTER_FILENAME = lambda filename: True
 # EXPORT = ['FULLPATH', 'PATH', 'FILE', 'EXT', 'HYPERLINK', 'MODIFIED', 'ACCESSED', 'CREATED', 'SIZE', 'PDF_DATE', 'EXIFDATE', 'WIDTH', 'HEIGHT']
 # EXPORT = ['PATH', 'FILE', 'SIZE']
 # EXPORT = ['PATH', 'FILE']
+EXPORT = ['PATH', 'FILE', 'MODIFIED', 'HYPERLINK']
 # EXPORT = ['PATH', 'FILE', 'MODIFIED']
 # EXPORT = ['PATH', 'FILE', 'CREATED']
 # EXPORT = ['PATH', 'FILE', 'SIZE', 'MODIFIED', 'ACCESSED', 'CREATED']
 # EXPORT = ['Path', 'File', 'Size', 'Created', 'ExifDate', 'Width', 'Height']
 # EXPORT = ['Hyperlink', 'Path', 'File', 'Created', 'ExifDate', 'Width', 'Height']
 # EXPORT = ['Hyperlink', 'File', 'PDF_DATE']
-EXPORT = ['Hyperlink']
+# EXPORT = ['Hyperlink', 'File', 'Size', 'Path']
+# EXPORT = ['Hyperlink']
 
 FRIENDLY_HYPERLINK = True
 # FRIENDLY_HYPERLINK = False
@@ -299,7 +305,7 @@ def search_files( dir = False,
     # Report the result
     if len(files)==0:
         print('No files found. Leaving clipboard unchanged')
-        return 
+        return
     else:
         print(f'{len(files)} files found. Preparing export...', end=' ')
 
