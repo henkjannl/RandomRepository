@@ -15,7 +15,9 @@
 # DIR = r'C:/Users/hjvanderpol'
 # DIR = r'C:/Users/hjvanderpol/Downloads'
 # DIR = r'C:\Users\henkj\OneDrive'
-# DIR = r'C:\Users\henkj\OneDrive\01 Gezamenlijk\03 Huis\03 Zonstraat - Hengelo'
+# DIR = r'C:\Users\henkjan\OneDrive'
+DIR = r'C:\Users\henkjan\OneDrive\Fotos'
+# # DIR = r'C:\Users\henkj\OneDrive\01 Gezamenlijk\03 Huis\03 Zonstraat - Hengelo'
 DIR = r'C:\Users\henkj\OneDrive\03 HenkJan\014 InternetOfThings\2025-12-28 Relais Marklin Kees\kicad\simulaties renumbered'
 # DIR = r'C:\Program Files\FreeCAD 1.0'
 # DIR = r'C:\Users\hjvanderpol\ASMPT Limited\Advanced Packaging alsi semi - Documents'
@@ -26,8 +28,8 @@ DIR = r'C:\Users\henkj\OneDrive\03 HenkJan\014 InternetOfThings\2025-12-28 Relai
 # ========================================================================
 # Search subdirectories or not
 # ========================================================================
-# RECURSIVE = False
-RECURSIVE = True
+RECURSIVE = False
+# RECURSIVE = True
 
 # ========================================================================
 # Include hidden files
@@ -71,8 +73,7 @@ FILTER_FILENAME = lambda filename: True
 # EXPORT = ['FULLPATH', 'PATH', 'FILE', 'EXT', 'HYPERLINK', 'MODIFIED', 'ACCESSED', 'CREATED', 'SIZE', 'PDF_DATE', 'EXIFDATE', 'WIDTH', 'HEIGHT']
 # EXPORT = ['PATH', 'FILE', 'SIZE']
 # EXPORT = ['PATH', 'FILE']
-EXPORT = ['FULLPATH']
-# EXPORT = ['PATH', 'FILE', 'MODIFIED', 'HYPERLINK']
+EXPORT = ['PATH', 'FILE', 'MODIFIED', 'HYPERLINK']
 # EXPORT = ['PATH', 'FILE', 'MODIFIED']
 # EXPORT = ['PATH', 'FILE', 'CREATED']
 # EXPORT = ['PATH', 'FILE', 'SIZE', 'MODIFIED', 'ACCESSED', 'CREATED']
@@ -98,7 +99,7 @@ DATE_FMT = "%Y-%m-%d"
 SORT = 'FULLPATH'
 # SORT = 'FILE'
 # SORT = 'CREATED'
-SORT = 'MODIFIED'
+# SORT = 'MODIFIED'
 # SORT = 'PDF_DATE'
 # SORT = 'EXIFDATE'
 # SORT = 'WIDTH'
